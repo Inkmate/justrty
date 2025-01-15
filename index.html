@@ -142,11 +142,72 @@
       color: #3498db;
     }
 
-    /* Responsive */
+    /* Responsive Styles for devices with max-width 600px */
     @media (max-width: 600px) {
+      body {
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      label {
+        font-size: 16px;
+      }
+
+      select {
+        width: 100%;
+        font-size: 14px;
+      }
+
       .data-container {
         flex-direction: column;
         align-items: center;
+        gap: 10px;
+      }
+
+      .data-box {
+        width: 90%;
+        font-size: 16px;
+      }
+
+      /* Keep icons in history headers and hide text */
+      .history-header div::before {
+        display: block;
+        font-size: 18px;
+        margin-bottom: 5px;
+      }
+
+      .history-header div:nth-child(1)::before { content: '🌱'; }
+      .history-header div:nth-child(2)::before { content: '🌡️'; }
+      .history-header div:nth-child(3)::before { content: '💧'; }
+      .history-header div:nth-child(4)::before { content: '☀️'; }
+      .history-header div:nth-child(5)::before { content: '⏰'; }
+
+      .history-header div {
+        font-size: 0;
+      }
+
+      /* Keep data visible in history rows without blending icons */
+      .history-row div {
+        font-size: 12px;
+        text-align: center;
+        position: relative;
+      }
+
+      #history-container {
+        padding: 10px;
+        width: 100%;
+      }
+
+      #history-table th, #history-table td {
+        font-size: 14px;
+        padding: 8px;
+      }
+
+      .history-row span {
+        font-size: 14px;
       }
     }
   </style>
@@ -156,7 +217,7 @@
   <div class="background"></div>
     <!-- Content -->
   <div class="content">
-  <h1>GREENTECH GUARDIAN Watering System</h1>
+  <h1>GREENTECH GUARDIAN Realtime Monitoring</h1>
 
   <label for="plantSelect">Select Plant:</label>
   <select id="plantSelect">
@@ -189,15 +250,16 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
-// Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyDM_f61yVx8ZxPywaFDL4nFjQHoaFWBG4E",
-  authDomain: "automaticwateringsystem-b02bc.firebaseapp.com",
-  databaseURL: "https://automaticwateringsystem-b02bc-default-rtdb.asia-southeast1.firebasedatabase.app/",
-  projectId: "automaticwateringsystem-b02bc",
-  storageBucket: "automaticwateringsystem-b02bc.appspot.com",
-  messagingSenderId: "320508766202",
-  appId: "1:320508766202:web:2168dabd5c5ba5ba762643",
+  apiKey: "AIzaSyDTii_aKIqaAFD1YcuIVR1ppfBJ6yeTNOs",
+  authDomain: "greentech-17f99.firebaseapp.com",
+  databaseURL: "https://greentech-17f99-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "greentech-17f99",
+  storageBucket: "greentech-17f99.firebasestorage.app",
+  messagingSenderId: "85799591596",
+  appId: "1:85799591596:web:8d41d23203d833372c0909",
+  measurementId: "G-2B4EZ55S1L"
 };
 
 // Initialize Firebase
@@ -253,7 +315,6 @@ function updatePlantData(plants, selectedPlant) {
   }
 }
 
-// Load and display history data
 function loadHistory(plants, selectedPlant) {
   const history = plants[selectedPlant]?.history;
   const historyContainer = document.getElementById("history-container");
@@ -261,7 +322,7 @@ function loadHistory(plants, selectedPlant) {
 
   if (history) {
     const historyKeys = Object.keys(history);
-    const last5Entries = historyKeys.slice(-5);
+    const last5Entries = historyKeys.slice(-10);
 
     // Add Header Row
     historyContainer.innerHTML += `
@@ -277,13 +338,19 @@ function loadHistory(plants, selectedPlant) {
     // Add History Rows
     last5Entries.forEach(key => {
       const entry = history[key];
+      const timestamp = entry.timestamp * 1000; // Convert from seconds to milliseconds
+
+      const localDate = new Date(timestamp);
+      const offset = 8 * 60; // PHT is UTC +8, so the offset is 8 hours in minutes
+      localDate.setMinutes(localDate.getMinutes() + offset);
+
       historyContainer.innerHTML += `
         <div class="history-row">
           <div><span>${entry.soilMoisture}%</span></div>
           <div><span>${entry.temperature}°C</span></div>
           <div><span>${entry.humidity}%</span></div>
           <div><span>${entry.sunlight} Lumens</span></div>
-          <div><span>${new Date(entry.timestamp).toLocaleString()}</span></div>
+          <div><span>${localDate.toLocaleString()}</span></div>
         </div>
       `;
     });
@@ -291,6 +358,7 @@ function loadHistory(plants, selectedPlant) {
     historyContainer.innerHTML = "<p>No history data available.</p>";
   }
 }
+
 // Function to update the current time
 function updateTime() {
   const timeElement = document.getElementById("current-time");
