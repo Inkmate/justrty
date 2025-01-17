@@ -6,11 +6,10 @@
   <title>GreenTech Guardian</title>
   <link rel="icon" href="logo.png" type="image/png">
   <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-database-compat.js"></script>
   <style>
-    /* General Styles */
-    body {
+   /* General Styles */
+   body {
       font-family: Arial, sans-serif;
       background-color: #f4f4f4;
       text-align: center;
@@ -46,21 +45,6 @@
       font-size: 18px;
       font-weight: bold;
     }
-
-    select {
-      padding: 10px;
-      font-size: 16px;
-      border: 1px solid #3498db;
-      border-radius: 5px;
-      background-color: white;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-
-    select:hover {
-      background-color: #e0f2ff;
-    }
-
     /* Data Display Box */
     .data-container {
       display: flex;
@@ -88,6 +72,10 @@
       margin-top: 5px;
     }
     /* History Section */
+
+    h2{
+      font-size: 30px;
+    }
     #history-container {
       margin: 20px auto;      /* Center horizontally */
       width: 100%;             /* Adjust width as needed */
@@ -186,6 +174,10 @@
       .history-header div:nth-child(5)::before { content: '⏰'; }
 
       .history-header div {
+        padding: 10px;
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
         font-size: 0;
       }
 
@@ -213,170 +205,83 @@
   </style>
 </head>
 <body>
-    <!--Background-->
   <div class="background"></div>
-    <!-- Content -->
   <div class="content">
-  <h1>GREENTECH GUARDIAN Realtime Monitoring</h1>
-
-  <label for="plantSelect">Select Plant:</label>
-  <select id="plantSelect">
-    <option value="" disabled selected>Loading...</option>
-  </select>
-
-  <div class="data-container">
-    <div class="data-box">
-      🌱 Moisture Level: <span id="moisture">Loading...</span>
+    <h1>GreenTech Guardian Realtime Monitoring</h1>
+    <div class="data-container">
+      <div class="data-box">🌱 Moisture Level: <span id="moisture">Loading...</span></div>
+      <div class="data-box">🌡️ Temperature: <span id="temperature">Loading...</span></div>
+      <div class="data-box">💧 Humidity: <span id="humidity">Loading...</span></div>
+      <div class="data-box">☀️ Sunlight: <span id="sunlight">Loading...</span></div>
+      <div class="data-box">⏰ Time: <span id="current-time">Loading...</span></div>
     </div>
-    <div class="data-box">
-      🌡️ Temperature: <span id="temperature">Loading...</span>
-    </div>
-    <div class="data-box">
-      💧 Humidity: <span id="humidity">Loading...</span>
-    </div>
-    <div class="data-box">
-      ☀️ Sunlight: <span id="sunlight">Loading...</span>
-    </div>
-    <div class="data-box">
-      ⏰ Time: <span id="current-time">Loading...</span>
-    </div>    
   </div>
-  
   <h2>History</h2>
-  <div id="history-wrapper"></div>
-    <div id="history-container"></div>  
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
-
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyDTii_aKIqaAFD1YcuIVR1ppfBJ6yeTNOs",
-  authDomain: "greentech-17f99.firebaseapp.com",
-  databaseURL: "https://greentech-17f99-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "greentech-17f99",
-  storageBucket: "greentech-17f99.firebasestorage.app",
-  messagingSenderId: "85799591596",
-  appId: "1:85799591596:web:8d41d23203d833372c0909",
-  measurementId: "G-2B4EZ55S1L"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
-
-const plantSelect = document.getElementById("plantSelect");
-const moistureElement = document.getElementById("moisture");
-const temperatureElement = document.getElementById("temperature");
-const humidityElement = document.getElementById("humidity");
-const sunlightElement = document.getElementById("sunlight");
-const historyContainer = document.getElementById("history-container");
-
-const plantsRef = ref(database, "/plants");
-
-// Populate dropdown with plants from Firebase
-onValue(plantsRef, (snapshot) => {
-  const plants = snapshot.val();
-  if (plants) {
-    plantSelect.innerHTML = ""; // Clear previous options
-    Object.keys(plants).forEach((plantKey) => {
-      const option = document.createElement("option");
-      option.value = plantKey;
-      option.textContent = plants[plantKey].name;
-      plantSelect.appendChild(option);
+  <div id="history-container"></div>
+  
+  <script>
+    const firebaseConfig = { 
+      apiKey: "AIzaSyDTii_aKIqaAFD1YcuIVR1ppfBJ6yeTNOs",
+      authDomain: "greentech-17f99.firebaseapp.com",
+      databaseURL: "https://greentech-17f99-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "greentech-17f99",
+      storageBucket: "greentech-17f99.firebasestorage.app",
+      messagingSenderId: "85799591596",
+      appId: "1:85799591596:web:8d41d23203d833372c0909",
+      measurementId: "G-2B4EZ55S1L" 
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    
+    db.ref("/plant").on("value", snapshot => {
+      const plant = snapshot.val();
+      if (plant) {
+        document.getElementById("moisture").textContent = plant.soil + "%";
+        document.getElementById("temperature").textContent = plant.temperature + "°C";
+        document.getElementById("humidity").textContent = plant.humidity + "%";
+        document.getElementById("sunlight").textContent = plant.sunlight + " Lumens";
+        loadHistory(plant.history);
+      }
     });
 
-    // Set default selection to the first plant
-    plantSelect.value = Object.keys(plants)[0];
-    updatePlantData(plants, plantSelect.value);
-    loadHistory(plants, plantSelect.value);
-  }
-});
-
-// Update displayed data when plant selection changes
-plantSelect.addEventListener("change", () => {
-  onValue(plantsRef, (snapshot) => {
-    const plants = snapshot.val();
-    if (plants) {
-      updatePlantData(plants, plantSelect.value);
-      loadHistory(plants, plantSelect.value);
+    function loadHistory(history) {
+      const historyContainer = document.getElementById("history-container");
+      historyContainer.innerHTML = "";
+      
+      if (history) {
+        const entries = Object.values(history).slice(-10);
+        historyContainer.innerHTML += `
+          <div class="history-header">
+            <div>🌱 Soil Moisture</div>
+            <div>🌡️ Temperature</div>
+            <div>💧 Humidity</div>
+            <div>☀️ Sunlight</div>
+            <div>⏰ Time</div>
+          </div>`;
+        
+        entries.forEach(entry => {
+          const date = new Date(entry.timestamp * 1000);
+          date.setMinutes(date.getMinutes() + 480); // Adjust for PHT timezone (UTC+8)
+          historyContainer.innerHTML += `
+            <div class="history-row">
+              <div>${entry.soilMoisture}%</div>
+              <div>${entry.temperature}°C</div>
+              <div>${entry.humidity}%</div>
+              <div>${entry.sunlight} Lumens</div>
+              <div>${date.toLocaleString()}</div>
+            </div>`;
+        });
+      } else {
+        historyContainer.innerHTML = "<p>No history data available.</p>";
+      }
     }
-  }, { onlyOnce: true }); // Fetch data only once to avoid redundant updates
-});
 
-// Update data for the selected plant
-function updatePlantData(plants, selectedPlant) {
-  if (plants[selectedPlant]) {
-    moistureElement.textContent = plants[selectedPlant].soil + "%";
-    temperatureElement.textContent = plants[selectedPlant].temperature + "°C";
-    humidityElement.textContent = plants[selectedPlant].humidity + "%";
-    sunlightElement.textContent = plants[selectedPlant].sunlight + " Lumens";
-  }
-}
-
-function loadHistory(plants, selectedPlant) {
-  const history = plants[selectedPlant]?.history;
-  const historyContainer = document.getElementById("history-container");
-  historyContainer.innerHTML = ""; // Clear previous history
-
-  if (history) {
-    const historyKeys = Object.keys(history);
-    const last5Entries = historyKeys.slice(-10);
-
-    // Add Header Row
-    historyContainer.innerHTML += `
-      <div class="history-header">
-        <div>🌱 Soil Moisture</div>
-        <div>🌡️ Temperature</div>
-        <div>💧 Humidity</div>
-        <div>☀️ Sunlight</div>
-        <div>⏰ Time</div>
-      </div>
-    `;
-
-    // Add History Rows
-    last5Entries.forEach(key => {
-      const entry = history[key];
-      const timestamp = entry.timestamp * 1000; // Convert from seconds to milliseconds
-
-      const localDate = new Date(timestamp);
-      const offset = 8 * 60; // PHT is UTC +8, so the offset is 8 hours in minutes
-      localDate.setMinutes(localDate.getMinutes() + offset);
-
-      historyContainer.innerHTML += `
-        <div class="history-row">
-          <div><span>${entry.soilMoisture}%</span></div>
-          <div><span>${entry.temperature}°C</span></div>
-          <div><span>${entry.humidity}%</span></div>
-          <div><span>${entry.sunlight} Lumens</span></div>
-          <div><span>${localDate.toLocaleString()}</span></div>
-        </div>
-      `;
-    });
-  } else {
-    historyContainer.innerHTML = "<p>No history data available.</p>";
-  }
-}
-
-// Function to update the current time
-function updateTime() {
-  const timeElement = document.getElementById("current-time");
-  const now = new Date();
-
-  // Format: Month Day, Year - HH:MM:SS AM/PM
-  const dateString = now.toLocaleDateString();  // e.g., 1/13/2025
-  const timeString = now.toLocaleTimeString();  // e.g., 6:45:30 PM
-
-  // Combine date and time
-  timeElement.textContent = `${dateString} ${timeString}`;
-}
-
-// Update every second
-setInterval(updateTime, 1000);
-
-// Initial update
-updateTime();
+    function updateTime() {
+      document.getElementById("current-time").textContent = new Date().toLocaleString();
+    }
+    setInterval(updateTime, 1000);
+    updateTime();
   </script>
 </body>
 </html>
